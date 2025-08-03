@@ -1,0 +1,63 @@
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.content {
+  flex: 1;
+}
+
+.task-card {
+  margin-bottom: 1rem;
+  transition: transform 0.2s;
+}
+
+.task-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.priority-high {
+  border-left: 4px solid #dc3545;
+}
+
+.priority-medium {
+  border-left: 4px solid #ffc107;
+}
+
+.priority-low {
+  border-left: 4px solid #28a745;
+}
+
+.status-todo {
+  background-color: #f8f9fa;
+}
+
+.status-in-progress {
+  background-color: #e2f0fd;
+}
+
+.status-done {
+  background-color: #e8f5e9;
+}
+
+.form-container {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.auth-form {
+  max-width: 400px;
+  margin: 2rem auto;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.home-banner {
+  background-color: #f5f5f5;
+  padding: 3rem 0;
+  margin-bottom: 2rem;
+  border-radius: 8px;
+}
