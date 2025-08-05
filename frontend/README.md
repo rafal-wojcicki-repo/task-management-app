@@ -38,7 +38,7 @@ This is the frontend part of the Task Management Application, built with React.
    npm start
    ```
 
-4. The application will be available at `http://localhost:3000`
+4. The application will be available at `http://localhost:80`
 
 ## Building for Production
 

@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -48,6 +49,9 @@ class AuthControllerTest {
     private AuthController authController;
 
     private LoginRequest loginRequest;
+
+    // Setup signup request
+
     private SignupRequest signupRequest;
     private Authentication authentication;
     private UserDetailsImpl userDetails;
@@ -62,8 +66,6 @@ class AuthControllerTest {
         loginRequest.setUsername("testuser");
         loginRequest.setPassword("password");
 
-        // Setup signup request
-        signupRequest = new SignupRequest();
         signupRequest.setUsername("newuser");
         signupRequest.setEmail("newuser@example.com");
         signupRequest.setPassword("password");

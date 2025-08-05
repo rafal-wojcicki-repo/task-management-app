@@ -1,0 +1,34 @@
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: task-management-app-backend:latest
+    container_name: task-management-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:h2:mem:taskdb
+      - SPRING_DATASOURCE_USERNAME=sa
+      - SPRING_DATASOURCE_PASSWORD=password
+      - JWT_SECRET=YourJWTSecretKeyHereMakeItLongAndSecureForProductionUse
+    networks:
+      - task-management-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: task-management-app-frontend:latest
+    container_name: task-management-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - task-management-network
+
+networks:
+  task-management-network:
+    driver: bridge

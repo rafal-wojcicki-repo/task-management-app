@@ -1,0 +1,30 @@
+# Maven build files
+target/
+!target/*.jar
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# Git files
+.git/
+.gitignore
+
+# Logs
+logs/
+*.log
+
+# Test files
+src/test/
+
+# Documentation
+README.md
+LICENSE
+
+# Docker files
+Dockerfile
+.dockerignore

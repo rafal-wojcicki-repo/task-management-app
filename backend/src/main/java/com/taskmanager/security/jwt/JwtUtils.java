@@ -15,11 +15,14 @@ import java.security.Key;
 import java.util.Date;
 import java.util.Objects;
 
+import static io.jsonwebtoken.Jwts.*;
+import static io.jsonwebtoken.SignatureAlgorithm.*;
+
 
 @Component
 public class JwtUtils {
     private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
-    private static final SignatureAlgorithm JWT_ALGORITHM = SignatureAlgorithm.HS512;
+    private static final SignatureAlgorithm JWT_ALGORITHM = HS512;
 
     @Value("${jwt.secret}")
     private String jwtSecret;
