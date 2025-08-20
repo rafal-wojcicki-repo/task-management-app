@@ -1,0 +1,30 @@
+# Docker
+# Build a Docker image
+# https://docs.microsoft.com/azure/devops/pipelines/languages/docker
+
+trigger:
+- master
+
+resources:
+- repo: self
+
+variables:
+  tag: '$(Build.BuildId)'
+
+stages:
+- stage: Build
+  displayName: Build image
+  jobs:
+  - job: Build
+    displayName: Build
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+    - task: DockerCompose@1
+      inputs:
+        containerregistrytype: 'Azure Container Registry'
+        azureSubscription: 'Azure subscription 1(c30e9518-7d35-420f-affe-13ed4e5c225a)'
+        azureContainerRegistry: '{"loginServer":"ca91294e0f3dacr.azurecr.io", "id" : "/subscriptions/c30e9518-7d35-420f-affe-13ed4e5c225a/resourceGroups/Training/providers/Microsoft.ContainerRegistry/registries/ca91294e0f3dacr"}'
+        dockerComposeFile: '**/docker-compose.yml'
+        action: 'Run a Docker Compose command'
+        dockerComposeCommand: 'docker-compose up -d'
