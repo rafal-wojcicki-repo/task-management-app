@@ -1,15 +1,5 @@
 # Task Management App
 
-## Changes Made to Fix Application Startup Issues
-
-The following issues were fixed to make the application runnable:
-
-1. **Java Version**: Changed Java version in `pom.xml` from 23 to 17, which is more widely available and supported.
-2. **XML Syntax Error**: Fixed the XML syntax error in `pom.xml` by changing `<n>` to `<name>`.
-3. **Database Configuration**: Added default credentials for the H2 database in `application.properties`:
-   - Username: sa
-   - Password: password
-
 ## Prerequisites
 
 Before running the application, ensure you have the following installed:
