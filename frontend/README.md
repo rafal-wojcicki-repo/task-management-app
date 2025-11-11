@@ -38,7 +38,7 @@ This is the frontend part of the Task Management Application, built with React.
    npm start
    ```
 
-4. The application will be available at `http://localhost:80`
+4. The application will be available at `http://localhost:3000`
 
 ## Building for Production
 
@@ -62,7 +62,7 @@ This will create a `build` folder with optimized production files.
 
 ## API Integration
 
-The frontend communicates with the backend API at `http://localhost:8080/api`. The proxy is configured in `package.json`.
+The frontend communicates with the backend API at `http://localhost:8080/api`. The proxy is configured in `package.json` for development. In production (Docker), the app is served by nginx on port 3000 and proxies requests under `/api` to the backend container.
 
 ## Authentication
 

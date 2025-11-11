@@ -270,3 +270,11 @@ CREATE → TODO → IN_PROGRESS → REVIEW → DONE
    - GraphQL API
    - Event-driven architecture with Kafka
    - Distributed caching
+
+## Local/Docker runtime specifics (updated 2025-10-15)
+- Frontend is served by nginx inside the frontend container and listens on port 3000.
+- nginx proxies all requests under `/api` to the backend container at `http://backend:8080/api`.
+- Backend runs on port 8080 and has `server.servlet.context-path=/api`, so all endpoints are rooted under `/api` (e.g., `/api/auth/signin`, `/api/tasks`).
+- When using docker-compose locally:
+  - Open the UI at http://localhost:3000
+  - Direct backend base URL is http://localhost:8080/api

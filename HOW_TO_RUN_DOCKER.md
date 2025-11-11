@@ -11,7 +11,7 @@ This guide explains how to run the Task Management Application using Docker Comp
 1. Open the project folder in File Explorer
 2. Double-click the `run-docker.bat` file
 3. Wait for the containers to build and start
-4. Access the application at http://localhost
+4. Access the application at http://localhost:3000
 
 ## Method 2: Using Command Line
 1. Open Command Prompt or PowerShell
@@ -23,7 +23,7 @@ This guide explains how to run the Task Management Application using Docker Comp
    ```
    docker-compose up -d
    ```
-4. Access the application at http://localhost
+4. Access the application at http://localhost:3000
 
 ## Checking Container Status
 ```
@@ -50,7 +50,7 @@ docker-compose down
 - Check Docker Compose installation with: `docker-compose --version`
 
 ### Port conflicts
-- If ports 80 or 8080 are already in use, you'll see an error
+- If ports 3000 or 8080 are already in use, you'll see an error
 - Stop any services using these ports or modify the port mappings in docker-compose.yml
 
 ### Container fails to start

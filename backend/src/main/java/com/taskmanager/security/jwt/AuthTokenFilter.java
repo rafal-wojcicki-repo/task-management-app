@@ -31,18 +31,35 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         try {
             String jwt = parseJwt(request);
-            if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
-                String username = jwtUtils.getUserNameFromJwtToken(jwt);
+            
+            if (jwt == null) {
+                logger.warn("No JWT token found in request for URI: {}", request.getRequestURI());
+            } else {
+                logger.info("JWT token found in request, validating... (URI: {})", request.getRequestURI());
+                if (jwtUtils.validateJwtToken(jwt)) {
+                    logger.info("JWT token is valid");
+                    String username = jwtUtils.getUserNameFromJwtToken(jwt);
+                    logger.info("Extracted username from JWT: {}", username);
 
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                userDetails.getAuthorities());
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    try {
+                        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                        UsernamePasswordAuthenticationToken authentication =
+                                new UsernamePasswordAuthenticationToken(
+                                        userDetails,
+                                        null,
+                                        userDetails.getAuthorities());
+                        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                        logger.info("Authentication set successfully for user: {}", username);
+                    } catch (org.springframework.security.core.userdetails.UsernameNotFoundException e) {
+                        logger.warn("User not found in database for username: {}. This may happen after database reset (H2 in-memory). Token is valid but user no longer exists.", username);
+                        // Don't set authentication - let SecurityContext remain unauthenticated
+                        // This will result in 401, which is correct behavior
+                    }
+                } else {
+                    logger.warn("JWT token validation failed for URI: {}", request.getRequestURI());
+                }
             }
         } catch (Exception e) {
             logger.error("Cannot set user authentication: {}", e.getMessage());

@@ -28,10 +28,10 @@ Before running the application with Docker, ensure you have the following instal
    - Create a network for communication between services
 
 3. Access the application:
-   - Frontend: http://localhost
-   - Backend API: http://localhost/api
-   - Swagger UI: http://localhost/api/swagger-ui.html
-   - H2 Database Console: http://localhost/api/h2-console (JDBC URL: jdbc:h2:mem:taskdb, Username: sa, Password: password)
+   - Frontend: http://localhost:3000
+   - Backend API (direct): http://localhost:8080/api
+   - Swagger UI: http://localhost:8080/api/swagger-ui.html
+   - H2 Database Console: http://localhost:8080/api/h2-console (JDBC URL: jdbc:h2:mem:taskdb, Username: sa, Password: password)
 
 ## Docker Components
 
@@ -44,8 +44,8 @@ The Docker setup consists of the following components:
 
 2. **Frontend Container**:
    - React application served by Nginx
-   - Exposes port 80
-   - Proxies API requests to the backend
+   - Exposes port 3000
+   - Proxies API requests under /api to the backend
 
 ## Stopping the Application
 

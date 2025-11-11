@@ -14,12 +14,14 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.*;
@@ -27,7 +29,7 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-
+@SpringBootTest
 class AuthControllerTest {
 
     @Mock
@@ -51,7 +53,7 @@ class AuthControllerTest {
     private LoginRequest loginRequest;
 
     // Setup signup request
-
+    @Mock
     private SignupRequest signupRequest;
     private Authentication authentication;
     private UserDetailsImpl userDetails;
@@ -69,7 +71,7 @@ class AuthControllerTest {
         signupRequest.setUsername("newuser");
         signupRequest.setEmail("newuser@example.com");
         signupRequest.setPassword("password");
-        Set<String> roles = new HashSet<>();
+        HashSet<String> roles = new HashSet<>();
         roles.add("user");
         signupRequest.setRole(roles);
 
@@ -97,7 +99,37 @@ class AuthControllerTest {
 
         // Assert
         assertNotNull(response);
-        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
+        verify(jwtUtils).generateJwtToken(authentication);
+    }
+
+    @Test
+    void authenticateUser_WhenAuthenticationFails_ShouldThrowException() {
+        // Arrange
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenThrow(new RuntimeException("Authentication failed"));
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> authController.authenticateUser(loginRequest));
+        assertEquals("Authentication failed", exception.getMessage());
+        verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
+        verifyNoInteractions(jwtUtils);
+    }
+
+    @Test
+    void authenticateUser_SetsSecurityContextHolderAfterAuthentication() {
+        // Arrange
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenReturn(authentication);
+        when(jwtUtils.generateJwtToken(authentication)).thenReturn("testToken");
+
+        // Act
+        authController.authenticateUser(loginRequest);
+
+        // Assert
+        assertEquals(authentication, SecurityContextHolder.getContext().getAuthentication());
         verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
         verify(jwtUtils).generateJwtToken(authentication);
     }
@@ -115,7 +147,7 @@ class AuthControllerTest {
 
         // Assert
         assertNotNull(response);
-        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(userRepository).save(any(User.class));
     }
 
@@ -129,7 +161,7 @@ class AuthControllerTest {
 
         // Assert
         assertNotNull(response);
-        assertEquals(400, response.getStatusCodeValue());
+        assertEquals(HttpStatus.valueOf(400), response.getStatusCode());
         verify(userRepository, never()).save(any(User.class));
     }
 
@@ -144,7 +176,7 @@ class AuthControllerTest {
 
         // Assert
         assertNotNull(response);
-        assertEquals(400, response.getStatusCodeValue());
+        assertEquals(HttpStatus.valueOf(400), response.getStatusCode());
         verify(userRepository, never()).save(any(User.class));
     }
 }

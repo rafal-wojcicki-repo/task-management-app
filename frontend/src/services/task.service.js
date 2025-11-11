@@ -1,7 +1,15 @@
 import axios from 'axios';
 import authHeader from './auth-header';
 
+// Use relative path so nginx (prod) and CRA proxy (dev) can route to backend consistently
 const API_URL = '/api/tasks/';
+
+function jsonAuthHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    ...authHeader(),
+  };
+}
 
 class TaskService {
   getAllTasks() {
@@ -17,11 +25,11 @@ class TaskService {
   }
 
   createTask(task) {
-    return axios.post(API_URL, task, { headers: authHeader() });
+    return axios.post(API_URL, task, { headers: jsonAuthHeaders() });
   }
 
   updateTask(id, task) {
-    return axios.put(API_URL + id, task, { headers: authHeader() });
+    return axios.put(API_URL + id, task, { headers: jsonAuthHeaders() });
   }
 
   deleteTask(id) {
@@ -30,9 +38,9 @@ class TaskService {
 
   updateTaskStatus(id, status) {
     return axios.patch(
-      API_URL + id + '/status', 
-      { status }, 
-      { headers: authHeader() }
+      API_URL + id + '/status',
+      { status },
+      { headers: jsonAuthHeaders() }
     );
   }
 }
