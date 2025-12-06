@@ -12,7 +12,7 @@ const Footer = () => {
           </Col>
           <Col md={6} className="text-center text-md-end">
             <p className="small">
-              &copy; {new Date().getFullYear()} Task Manager. All rights reserved.
+              &copy; {new Date().getFullYear()} Task Manager. All rights reserved to Rafał Wójcicki.
             </p>
           </Col>
         </Row>

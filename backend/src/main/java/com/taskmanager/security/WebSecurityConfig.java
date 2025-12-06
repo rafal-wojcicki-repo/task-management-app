@@ -38,10 +38,10 @@ public class WebSecurityConfig {
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        
+
         authProvider.setUserDetailsService(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder());
-        
+
         return authProvider;
     }
 
@@ -62,13 +62,21 @@ public class WebSecurityConfig {
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/h2-console/**").permitAll()
-                        .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        .anyRequest().authenticated()
+                    // Allow unauthenticated access to auth endpoints
+                    .requestMatchers("/api/auth/**").permitAll()
+                    // Allow H2 console and API docs
+                    .requestMatchers("/h2-console/**").permitAll()
+                    .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                    // Protect all /api/** endpoints (require authentication)
+                    .requestMatchers("/api/**").authenticated()
+                    // Allow root, SPA routes and static assets
+                    .requestMatchers("/", "/index.html", "/favicon.ico", "/static/**", "/assets/**", "/manifest.json",
+                                     "/register", "/login", "/profile", "/tasks", "/task-form").permitAll()
+                    // Any other request — allow (or change to .authenticated() if you prefer strict)
+                    .anyRequest().permitAll()
                 );
 
-        // Disable frame options for H2 console
+        // Keep H2 console frames working
         http.headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()));
 
         http.authenticationProvider(authenticationProvider());
@@ -76,21 +84,4 @@ public class WebSecurityConfig {
 
         return http.build();
     }
-
-    /*@Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        // TEMPORARILY DISABLE AUTH/JWT: allow all requests without authentication
-        http.csrf(AbstractHttpConfigurer::disable)
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
-
-        // Keep H2 console working in frames
-        http.headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin));
-
-        // Do NOT register authentication provider nor JWT filter while JWT is disabled
-        // http.authenticationProvider(authenticationProvider());
-        // http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
-
-        return http.build();
-    }*/
 }

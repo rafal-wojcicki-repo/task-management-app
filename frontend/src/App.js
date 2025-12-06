@@ -39,7 +39,7 @@ const App = () => {
       <Container className="flex-grow-1 py-3">
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
+          <Route path="/login" element={<Login onLogin={(user) => setCurrentUser(user)} />} />
           <Route path="/register" element={<Register />} />
           <Route 
             path="/tasks" 

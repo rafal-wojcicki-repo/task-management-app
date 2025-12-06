@@ -1,0 +1,18 @@
+{
+  "properties": [
+    {
+      "name": "jwt.secret",
+      "type": "java.lang.String",
+      "description": "JWT signing secret (Base64-encoded)"
+    },
+    {
+      "name": "jwt.expiration",
+      "type": "java.lang.Integer",
+      "description": "JWT expiration in milliseconds"
+    }
+  ]
+}
+
+
+
+
