@@ -10,11 +10,12 @@ import com.taskmanager.repository.UserRepository;
 import com.taskmanager.security.jwt.JwtUtils;
 import com.taskmanager.security.services.UserDetailsImpl;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -26,10 +27,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-@SpringBootTest
+
+/**
+ * Unit tests for AuthController using BDD (Behavior-Driven Development) approach.
+ * Tests follow Given-When-Then pattern for better readability and maintainability.
+ */
+@DisplayName("AuthController")
 class AuthControllerTest {
 
     @Mock
@@ -51,9 +57,6 @@ class AuthControllerTest {
     private AuthController authController;
 
     private LoginRequest loginRequest;
-
-    // Setup signup request
-    @Mock
     private SignupRequest signupRequest;
     private Authentication authentication;
     private UserDetailsImpl userDetails;
@@ -62,18 +65,17 @@ class AuthControllerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        initializeTestData();
+    }
 
+    private void initializeTestData() {
         // Setup login request
         loginRequest = new LoginRequest();
         loginRequest.setUsername("testuser");
         loginRequest.setPassword("password");
 
-        signupRequest.setUsername("newuser");
-        signupRequest.setEmail("newuser@example.com");
-        signupRequest.setPassword("password");
-        HashSet<String> roles = new HashSet<>();
-        roles.add("user");
-        signupRequest.setRole(roles);
+        // Setup signup request
+        signupRequest = new SignupRequest("newuser", "newuser@example.com", new HashSet<>(Collections.singletonList("user")), "password");
 
         // Setup authentication
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
@@ -87,96 +89,151 @@ class AuthControllerTest {
         userRole.setName(ERole.ROLE_USER);
     }
 
-    @Test
-    void authenticateUser_ShouldReturnJwtResponse() {
-        // Arrange
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenReturn(authentication);
-        when(jwtUtils.generateJwtToken(authentication)).thenReturn("testToken");
+    @Nested
+    @DisplayName("Login endpoint")
+    class AuthenticateUser {
 
-        // Act
-        ResponseEntity<?> response = authController.authenticateUser(loginRequest);
+        @Test
+        @DisplayName("Should return JWT token when credentials are valid")
+        void givenValidCredentials_whenAuthenticate_thenReturnJwtResponse() {
+            // Given
+            when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                    .thenReturn(authentication);
+            when(jwtUtils.generateJwtToken(authentication)).thenReturn("testToken");
 
-        // Assert
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
-        verify(jwtUtils).generateJwtToken(authentication);
+            // When
+            ResponseEntity<?> response = authController.authenticateUser(loginRequest);
+
+            // Then
+            assertThat(response)
+                    .isNotNull()
+                    .satisfies(r -> assertThat(r.getStatusCode()).isEqualTo(HttpStatus.OK));
+            verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
+            verify(jwtUtils).generateJwtToken(authentication);
+        }
+
+        @Test
+        @DisplayName("Should throw exception when authentication fails")
+        void givenInvalidCredentials_whenAuthenticate_thenThrowException() {
+            // Given
+            when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                    .thenThrow(new RuntimeException("Authentication failed"));
+
+            // When & Then
+            assertThatThrownBy(() -> authController.authenticateUser(loginRequest))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("Authentication failed");
+
+            verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
+            verifyNoInteractions(jwtUtils);
+        }
+
+        @Test
+        @DisplayName("Should set SecurityContext after successful authentication")
+        void givenValidCredentials_whenAuthenticate_thenSecurityContextIsSet() {
+            // Given
+            when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                    .thenReturn(authentication);
+            when(jwtUtils.generateJwtToken(authentication)).thenReturn("testToken");
+
+            // When
+            authController.authenticateUser(loginRequest);
+
+            // Then
+            assertThat(SecurityContextHolder.getContext().getAuthentication())
+                    .isEqualTo(authentication);
+            verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
+        }
     }
 
-    @Test
-    void authenticateUser_WhenAuthenticationFails_ShouldThrowException() {
-        // Arrange
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenThrow(new RuntimeException("Authentication failed"));
+    @Nested
+    @DisplayName("Registration endpoint")
+    class RegisterUser {
 
-        // Act & Assert
-        RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> authController.authenticateUser(loginRequest));
-        assertEquals("Authentication failed", exception.getMessage());
-        verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
-        verifyNoInteractions(jwtUtils);
-    }
+        @Test
+        @DisplayName("Should successfully register a new user with valid data")
+        void givenNewUser_whenRegister_thenUserIsSaved() {
+            // Given
+            when(userRepository.existsByUsername(signupRequest.getUsername())).thenReturn(false);
+            when(userRepository.existsByEmail(signupRequest.getEmail())).thenReturn(false);
+            when(encoder.encode(signupRequest.getPassword())).thenReturn("encodedPassword");
+            when(roleRepository.findByName(ERole.ROLE_USER)).thenReturn(Optional.of(userRole));
 
-    @Test
-    void authenticateUser_SetsSecurityContextHolderAfterAuthentication() {
-        // Arrange
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenReturn(authentication);
-        when(jwtUtils.generateJwtToken(authentication)).thenReturn("testToken");
+            // When
+            ResponseEntity<?> response = authController.registerUser(signupRequest);
 
-        // Act
-        authController.authenticateUser(loginRequest);
+            // Then
+            assertThat(response)
+                    .isNotNull()
+                    .satisfies(r -> assertThat(r.getStatusCode()).isEqualTo(HttpStatus.OK));
+            verify(userRepository).save(any(User.class));
+            verify(roleRepository).findByName(ERole.ROLE_USER);
+        }
 
-        // Assert
-        assertEquals(authentication, SecurityContextHolder.getContext().getAuthentication());
-        verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
-        verify(jwtUtils).generateJwtToken(authentication);
-    }
+        @Test
+        @DisplayName("Should return 400 when username already exists")
+        void givenExistingUsername_whenRegister_thenReturnBadRequest() {
+            // Given
+            when(userRepository.existsByUsername(signupRequest.getUsername())).thenReturn(true);
 
-    @Test
-    void registerUser_WithNewUser_ShouldReturnSuccessMessage() {
-        // Arrange
-        when(userRepository.existsByUsername(signupRequest.getUsername())).thenReturn(false);
-        when(userRepository.existsByEmail(signupRequest.getEmail())).thenReturn(false);
-        when(encoder.encode(signupRequest.getPassword())).thenReturn("encodedPassword");
-        when(roleRepository.findByName(ERole.ROLE_USER)).thenReturn(Optional.of(userRole));
+            // When
+            ResponseEntity<?> response = authController.registerUser(signupRequest);
 
-        // Act
-        ResponseEntity<?> response = authController.registerUser(signupRequest);
+            // Then
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+            verify(userRepository, never()).save(any(User.class));
+        }
 
-        // Assert
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(userRepository).save(any(User.class));
-    }
+        @Test
+        @DisplayName("Should return 400 when email already exists")
+        void givenExistingEmail_whenRegister_thenReturnBadRequest() {
+            // Given
+            when(userRepository.existsByUsername(signupRequest.getUsername())).thenReturn(false);
+            when(userRepository.existsByEmail(signupRequest.getEmail())).thenReturn(true);
 
-    @Test
-    void registerUser_WithExistingUsername_ShouldReturnBadRequest() {
-        // Arrange
-        when(userRepository.existsByUsername(signupRequest.getUsername())).thenReturn(true);
+            // When
+            ResponseEntity<?> response = authController.registerUser(signupRequest);
 
-        // Act
-        ResponseEntity<?> response = authController.registerUser(signupRequest);
+            // Then
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+            verify(userRepository, never()).save(any(User.class));
+        }
 
-        // Assert
-        assertNotNull(response);
-        assertEquals(HttpStatus.valueOf(400), response.getStatusCode());
-        verify(userRepository, never()).save(any(User.class));
-    }
+        @Test
+        @DisplayName("Should encode password before saving user")
+        void givenValidSignup_whenRegister_thenPasswordIsEncoded() {
+            // Given
+            when(userRepository.existsByUsername(signupRequest.getUsername())).thenReturn(false);
+            when(userRepository.existsByEmail(signupRequest.getEmail())).thenReturn(false);
+            when(encoder.encode(signupRequest.getPassword())).thenReturn("encodedPassword");
+            when(roleRepository.findByName(ERole.ROLE_USER)).thenReturn(Optional.of(userRole));
 
-    @Test
-    void registerUser_WithExistingEmail_ShouldReturnBadRequest() {
-        // Arrange
-        when(userRepository.existsByUsername(signupRequest.getUsername())).thenReturn(false);
-        when(userRepository.existsByEmail(signupRequest.getEmail())).thenReturn(true);
+            // When
+            authController.registerUser(signupRequest);
 
-        // Act
-        ResponseEntity<?> response = authController.registerUser(signupRequest);
+            // Then
+            verify(encoder).encode(signupRequest.getPassword());
+            verify(userRepository).save(argThat(user ->
+                    user.getPassword().equals("encodedPassword")
+            ));
+        }
 
-        // Assert
-        assertNotNull(response);
-        assertEquals(HttpStatus.valueOf(400), response.getStatusCode());
-        verify(userRepository, never()).save(any(User.class));
+        @Test
+        @DisplayName("Should assign default role (ROLE_USER) when no role specified")
+        void givenNoRoleSpecified_whenRegister_thenDefaultRoleAssigned() {
+            // Given
+            signupRequest.setRole(null);
+            when(userRepository.existsByUsername(signupRequest.getUsername())).thenReturn(false);
+            when(userRepository.existsByEmail(signupRequest.getEmail())).thenReturn(false);
+            when(encoder.encode(signupRequest.getPassword())).thenReturn("encodedPassword");
+            when(roleRepository.findByName(ERole.ROLE_USER)).thenReturn(Optional.of(userRole));
+
+            // When
+            authController.registerUser(signupRequest);
+
+            // Then
+            verify(roleRepository).findByName(ERole.ROLE_USER);
+            verify(userRepository).save(any(User.class));
+        }
     }
 }

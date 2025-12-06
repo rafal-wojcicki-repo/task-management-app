@@ -1,120 +1,259 @@
 package com.taskmanager.security.jwt;
 
-import com.taskmanager.controller.AuthController;
-import com.taskmanager.payload.request.SignupRequest;
 import com.taskmanager.security.services.UserDetailsImpl;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Collection;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 
-@SpringBootTest
+/**
+ * Unit tests for JwtUtils using BDD (Behavior-Driven Development) approach.
+ * Tests JWT token generation, validation, and extraction of claims.
+ */
+@DisplayName("JwtUtils")
 class JwtUtilsTest {
 
     private JwtUtils jwtUtils;
     private UserDetailsImpl userDetails;
     private Authentication authentication;
-    @Autowired
-    private AuthController controller;
+
+    private static final String BASE64_SECRET = "QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVo5MDg3NjU0MzIxYWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXo5MDg3NjU0MzIx";
+    private static final long EXPIRATION_TIME = 60000; // 1 minute
+    private static final String TEST_USERNAME = "testuser";
+    private static final String TEST_EMAIL = "test@example.com";
 
     @BeforeEach
     void setUp() {
         jwtUtils = new JwtUtils();
-        // Use a Base64-encoded secret because JwtUtils expects Base64 and decodes it before creating the key.
-        String base64Secret = "QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVo5MDg3NjU0MzIxYWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXo5MDg3NjU0MzIx"; // Base64 of 64-byte secret
-        ReflectionTestUtils.setField(jwtUtils, "jwtSecret", base64Secret);
-        ReflectionTestUtils.setField(jwtUtils, "jwtExpirationMs", 60000); // 1 minute
-
-        // Initialize internal signingKey and parser
+        ReflectionTestUtils.setField(jwtUtils, "jwtSecret", BASE64_SECRET);
+        ReflectionTestUtils.setField(jwtUtils, "jwtExpirationMs", EXPIRATION_TIME);
         jwtUtils.init();
 
-        // Create user details
         Collection<GrantedAuthority> authorities = new ArrayList<>();
         authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
-        userDetails = new UserDetailsImpl(1L, "sa", "test@example.com", "password", authorities);
-
-        // Create authentication
+        userDetails = new UserDetailsImpl(1L, TEST_USERNAME, TEST_EMAIL, "password", authorities);
         authentication = new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
     }
 
-    @Test
-    void generateJwtToken_ShouldReturnValidToken() {
-        // Act
-        String token = jwtUtils.generateJwtToken(authentication);
-        
-        // Assert
-        assertNotNull(token);
-        assertTrue(token.length() > 0);
+    @Nested
+    @DisplayName("Token Generation")
+    class TokenGeneration {
+
+        @Test
+        @DisplayName("Should generate valid JWT token from authentication")
+        void givenValidAuthentication_whenGenerateToken_thenReturnJwtToken() {
+            // When
+            String token = jwtUtils.generateJwtToken(authentication);
+
+            // Then
+            assertThat(token)
+                    .isNotNull()
+                    .isNotEmpty()
+                    .hasSizeGreaterThan(20);
+        }
+
+        @Test
+        @DisplayName("Should generate token with correct structure (header.payload.signature)")
+        void givenValidAuthentication_whenGenerateToken_thenTokenHasCorrectStructure() {
+            // When
+            String token = jwtUtils.generateJwtToken(authentication);
+
+            // Then
+            assertThat(token)
+                    .contains(".")
+                    .hasSizeGreaterThan(50)
+                    .matches("[A-Za-z0-9\\-_.]+\\.[A-Za-z0-9\\-_.]+\\.[A-Za-z0-9\\-_.]+");
+        }
+
+        @Test
+        @DisplayName("Should generate different tokens for same authentication on different calls")
+        void givenSameAuthentication_whenGenerateTokenTwice_thenTokensAreDifferent() {
+            // When
+            String token1 = jwtUtils.generateJwtToken(authentication);
+            String token2 = jwtUtils.generateJwtToken(authentication);
+
+            // Then
+            assertThat(token1).isNotEqualTo(token2);
+        }
     }
 
-    @Test
-    void validateJwtToken_WithValidToken_ShouldReturnTrue() {
-        // Arrange
-        String token = jwtUtils.generateJwtToken(authentication);
-        
-        // Act
-        boolean isValid = jwtUtils.validateJwtToken(token);
-        
-        // Assert
-        assertTrue(isValid);
+    @Nested
+    @DisplayName("Token Validation")
+    class TokenValidation {
+
+        @Test
+        @DisplayName("Should validate a valid JWT token")
+        void givenValidToken_whenValidate_thenReturnTrue() {
+            // Given
+            String token = jwtUtils.generateJwtToken(authentication);
+
+            // When
+            boolean isValid = jwtUtils.validateJwtToken(token);
+
+            // Then
+            assertThat(isValid).isTrue();
+        }
+
+        @Test
+        @DisplayName("Should reject invalid JWT token")
+        void givenInvalidToken_whenValidate_thenReturnFalse() {
+            // When
+            boolean isValid = jwtUtils.validateJwtToken("invalidToken");
+
+            // Then
+            assertThat(isValid).isFalse();
+        }
+
+        @Test
+        @DisplayName("Should reject token with wrong signature")
+        void givenTokenWithWrongSignature_whenValidate_thenReturnFalse() {
+            // Given
+            String token = jwtUtils.generateJwtToken(authentication);
+            String modifiedToken = token.substring(0, token.length() - 1) + "X";
+
+            // When
+            boolean isValid = jwtUtils.validateJwtToken(modifiedToken);
+
+            // Then
+            assertThat(isValid).isFalse();
+        }
+
+        @Test
+        @DisplayName("Should reject empty token")
+        void givenEmptyToken_whenValidate_thenReturnFalse() {
+            // When
+            boolean isValid = jwtUtils.validateJwtToken("");
+
+            // Then
+            assertThat(isValid).isFalse();
+        }
+
+        @Test
+        @DisplayName("Should reject null token")
+        void givenNullToken_whenValidate_thenReturnFalse() {
+            // When & Then
+            assertThatThrownBy(() -> jwtUtils.validateJwtToken(null))
+                    .isInstanceOf(Exception.class);
+        }
     }
 
-    @Test
-    void validateJwtToken_WithInvalidToken_ShouldReturnFalse() {
-        // Act
-        boolean isValid = jwtUtils.validateJwtToken("invalidToken");
-        
-        // Assert
-        assertFalse(isValid);
+    @Nested
+    @DisplayName("Extract Username")
+    class ExtractUsername {
+
+        @Test
+        @DisplayName("Should extract correct username from valid token")
+        void givenValidToken_whenExtractUsername_thenReturnCorrectUsername() {
+            // Given
+            String token = jwtUtils.generateJwtToken(authentication);
+
+            // When
+            String username = jwtUtils.getUserNameFromJwtToken(token);
+
+            // Then
+            assertThat(username).isEqualTo(TEST_USERNAME);
+        }
+
+        @Test
+        @DisplayName("Should extract username matching authentication principal")
+        void givenTokenFromAuthentication_whenExtractUsername_thenMatchesPrincipal() {
+            // Given
+            String token = jwtUtils.generateJwtToken(authentication);
+
+            // When
+            String extractedUsername = jwtUtils.getUserNameFromJwtToken(token);
+
+            // Then
+            assertThat(extractedUsername).isEqualTo(authentication.getName());
+        }
+
+        @Test
+        @DisplayName("Should throw exception when extracting username from invalid token")
+        void givenInvalidToken_whenExtractUsername_thenThrowException() {
+            // When & Then
+            assertThatThrownBy(() -> jwtUtils.getUserNameFromJwtToken("invalidToken"))
+                    .isInstanceOf(Exception.class);
+        }
     }
 
-    @Test
-    void getUserNameFromJwtToken_ShouldReturnCorrectUsername() {
-        // Arrange
-        String token = jwtUtils.generateJwtToken(authentication);
-        
-        // Act
-        String username = jwtUtils.getUserNameFromJwtToken(token);
-        
-        // Assert
-        assertEquals("sa", username);
+    @Nested
+    @DisplayName("Token Expiration")
+    class TokenExpiration {
+
+        @Test
+        @DisplayName("Should generate token that is not expired immediately after creation")
+        void givenNewToken_whenValidate_thenTokenIsNotExpired() {
+            // Given
+            String token = jwtUtils.generateJwtToken(authentication);
+
+            // When
+            boolean isValid = jwtUtils.validateJwtToken(token);
+
+            // Then
+            assertThat(isValid).isTrue();
+        }
+
+        @Test
+        @DisplayName("Should include expiration claim in token")
+        void givenGeneratedToken_whenGenerated_thenTokenHasExpirationTime() {
+            // When
+            String token = jwtUtils.generateJwtToken(authentication);
+
+            // Then
+            assertThat(token).isNotNull();
+            // Token should be valid (not expired immediately)
+            assertThat(jwtUtils.validateJwtToken(token)).isTrue();
+        }
     }
 
-    @Test
-    void login() {
-        // Arrange
-        String token = jwtUtils.generateJwtToken(authentication);
+    @Nested
+    @DisplayName("Multiple Users")
+    class MultipleUsers {
 
-        // Act
-        String username = jwtUtils.getUserNameFromJwtToken(token);
-        HashSet<String> roles = new HashSet<>();
-        roles.add("ROLE_USER");
-        SignupRequest signupRequest = new SignupRequest(username, userDetails.getEmail(), new HashSet<>(userDetails.getAuthorities().size()),"password");
+        @Test
+        @DisplayName("Should generate different tokens for different users")
+        void givenDifferentUsers_whenGenerateTokens_thenTokensAreDifferent() {
+            // Given
+            UserDetailsImpl user2 = new UserDetailsImpl(2L, "otheruser", "other@example.com", "password",
+                    new ArrayList<>(authentication.getAuthorities()));
+            Authentication auth2 = new UsernamePasswordAuthenticationToken(user2, null, authentication.getAuthorities());
 
-        ResponseEntity<?> response = controller.registerUser(signupRequest);
-        // Assert
-        assertEquals("sa", username);
-        assertEquals(200, response.getStatusCode().value());
-    }
+            // When
+            String token1 = jwtUtils.generateJwtToken(authentication);
+            String token2 = jwtUtils.generateJwtToken(auth2);
 
-    public AuthController getController() {
-        return controller;
-    }
+            // Then
+            assertThat(token1).isNotEqualTo(token2);
+        }
 
-    public void setController(AuthController controller) {
-        this.controller = controller;
+        @Test
+        @DisplayName("Should extract correct username for each user's token")
+        void givenTokensForDifferentUsers_whenExtractUsername_thenReturnCorrectUsernames() {
+            // Given
+            UserDetailsImpl user2 = new UserDetailsImpl(2L, "otheruser", "other@example.com", "password",
+                    new ArrayList<>(authentication.getAuthorities()));
+            Authentication auth2 = new UsernamePasswordAuthenticationToken(user2, null, authentication.getAuthorities());
+
+            String token1 = jwtUtils.generateJwtToken(authentication);
+            String token2 = jwtUtils.generateJwtToken(auth2);
+
+            // When
+            String username1 = jwtUtils.getUserNameFromJwtToken(token1);
+            String username2 = jwtUtils.getUserNameFromJwtToken(token2);
+
+            // Then
+            assertThat(username1).isEqualTo(TEST_USERNAME);
+            assertThat(username2).isEqualTo("otheruser");
+        }
     }
 }

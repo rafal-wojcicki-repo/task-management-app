@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Form, Button, Card, Alert } from 'react-bootstrap';
 import AuthService from '../services/auth.service';
 
-const Login = () => {
+const Login = ({ onLogin }) => {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -22,9 +22,10 @@ const Login = () => {
     }
 
     AuthService.login(username, password)
-      .then(() => {
+      .then((data) => {
+        // Update app state (no full reload) and navigate to tasks
+        if (onLogin) onLogin(data);
         navigate('/tasks');
-        window.location.reload();
       })
       .catch(error => {
         const resMessage =

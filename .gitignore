@@ -1,4 +1,29 @@
+# General
+.DS_Store
+Thumbs.db
+ehthumbs.db
+.Spotlight-V100
+
+# Node
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+dist/
+build/
+frontend/build/
+frontend/dist/
+
+# Environment files
+.env
+.env.*
+secrets.env
+
+# Java / Maven
 target/
+**/target/
 pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup
@@ -7,28 +32,29 @@ release.properties
 dependency-reduced-pom.xml
 buildNumber.properties
 .mvn/timing.properties
-# https://maven.apache.org/wrapper/#usage-without-binary-jar
+# Maven wrapper JAR is sometimes committed; ignore if present locally
 .mvn/wrapper/maven-wrapper.jar
 
-# Eclipse m2e generated files
-# Eclipse Core
+# IDEs and editors
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.code-workspace
 .project
-# JDT-specific (Eclipse Java Development Tools)
 .classpath
+.settings/
 
-# Compiled class file
+# Compiled class files
 *.class
 
-# Log file
+# Logs
 *.log
+logs/
+*.log.*
 
-# BlueJ files
-*.ctxt
-
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files #
+# Archives
 *.jar
 *.war
 *.nar
@@ -37,8 +63,31 @@ buildNumber.properties
 *.tar.gz
 *.rar
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+# Crash logs
 hs_err_pid*
 replay_pid*
 
-idea/
+# Test / reports / coverage
+surefire-reports/
+coverage/
+.nyc_output/
+lcov-report/
+test-classes/
+
+# Docker
+docker-compose.override.yml
+docker-compose.*.local.yml
+
+# Certificates and keys
+*.p12
+*.pem
+*.key
+*.csr
+*.crt
+
+# Misc
+*.class
+*.ctxt
+.mtj.tmp/
+
+# Keep this file under version control — edits here control what is excluded from git

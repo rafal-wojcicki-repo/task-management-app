@@ -25,7 +25,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 public class AuthController {
 
     private static final String ERR_USERNAME_TAKEN = "Error: Username is already taken!";
