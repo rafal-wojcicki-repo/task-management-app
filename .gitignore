@@ -90,4 +90,7 @@ docker-compose.*.local.yml
 *.ctxt
 .mtj.tmp/
 
+# My notes
+my_notes.txt
+
 # Keep this file under version control — edits here control what is excluded from git
