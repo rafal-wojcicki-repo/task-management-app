@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: task-management-app
+    runtime: docker
+    region: frankfurt
+    plan: free
+    branch: main
+    repo: https://github.com/rafal-wojcicki-repo/task-management-app
+    dockerfilePath: ./Dockerfile
+    
+    envVars:
+      - key: SPRING_JPA_DATABASE_PLATFORM
+        value: org.hibernate.dialect.PostgreSQLDialect
+      - key: SPRING_JPA_HBM2DDL
+        value: update
+      - key: JWT_SECRET
+        fromDatabase:
+          name: task-management-db
+          property: JWT_SECRET
+        # Use default if not in database (can be set in dashboard)
+        default: QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVo5MDg3NjU0MzIxYWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXo5MDg3NjU0MzIx
+
+databases:
+  - name: task-management-db
+    databaseName: taskdb
+    user: taskuser
+    region: frankfurt
+    plan: free
+    postgresMajorVersion: "15"

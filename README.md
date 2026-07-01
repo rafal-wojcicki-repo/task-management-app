@@ -2,7 +2,7 @@
 
 A full-stack task management system with user authentication, real-time task updates, and role-based access control.
 
-**🚀 Live Demo:** https://task-management-app-v1-45bab27bbe23.herokuapp.com/
+**🚀 Live Demo:** https://task-management-app.onrender.com/
 
 ---
 
@@ -39,7 +39,7 @@ A full-stack task management system with user authentication, real-time task upd
 
 **DevOps:**
 - Docker & Docker Compose
-- Heroku for cloud deployment
+- Render.com for cloud deployment
 - Multi-stage Docker builds for optimized images
 
 ---
@@ -78,7 +78,7 @@ Access the app at `http://localhost:3000`
 
 ## API Documentation
 
-**Base URL:** `http://localhost:8080/api` (or use the live Heroku URL)
+**Base URL:** `http://localhost:8080/api` (or use the live Render.com URL)
 
 ### Authentication
 ```
@@ -131,32 +131,49 @@ For detailed testing guide, see [`backend/TESTING.md`](backend/TESTING.md).
 
 ## Deployment
 
-This application is deployed on **Heroku** using the Container Registry.
+This application is deployed on **Render.com** using Docker containers with auto-deployment from GitHub.
 
 ### Environment Variables (Production)
-- `SPRING_DATASOURCE_URL` – PostgreSQL connection URL
-- `SPRING_DATASOURCE_USERNAME` – Database username
-- `SPRING_DATASOURCE_PASSWORD` – Database password
+- `SPRING_DATASOURCE_URL` – PostgreSQL connection URL (auto-configured by Render)
+- `SPRING_DATASOURCE_USERNAME` – Database username (auto-configured by Render)
+- `SPRING_DATASOURCE_PASSWORD` – Database password (auto-configured by Render)
+- `SPRING_JPA_DATABASE_PLATFORM` – Set to `org.hibernate.dialect.PostgreSQLDialect`
+- `SPRING_JPA_HBM2DDL` – Set to `update` for automatic schema updates
 - `JWT_SECRET` – JWT signing secret
 
-### Deploy Your Own Version
-```bash
-# Login to Heroku
-heroku login
+### Deploy Your Own Version to Render
 
-# Create app
-heroku create your-app-name
+1. **Connect Repository:**
+   ```bash
+   # Ensure all changes are pushed to GitHub
+   git push origin main
+   ```
 
-# Add PostgreSQL
-heroku addons:create heroku-postgresql:hobby-dev
+2. **Create Web Service on Render:**
+   - Go to https://render.com
+   - Click "New +" → "Web Service"
+   - Connect your GitHub repository
+   - Select `task-management-app`
+   - Set Runtime to "Docker"
+   - Leave other settings as default
+   - Click "Deploy"
 
-# Deploy via Heroku Container Registry
-heroku container:push web --app your-app-name
-heroku container:release web --app your-app-name
+3. **Create PostgreSQL Database:**
+   - Click "New +" → "PostgreSQL"
+   - Set database name to `taskdb`
+   - Choose Frankfurt region (for Europe)
+   - Select "Free" plan
 
-# View logs
-heroku logs --tail --app your-app-name
-```
+4. **Connect Database to Web Service:**
+   - Open your Web Service
+   - Go to Environment
+   - Click "Add from Database"
+   - Select your PostgreSQL database
+   - Render will automatically add connection variables
+
+5. **View Deployment Logs:**
+   - Open Web Service dashboard
+   - Click "Logs" tab to monitor deployment
 
 ---
 
